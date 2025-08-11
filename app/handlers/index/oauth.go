@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/oauth2/v2"
+	googleoauth2 "google.golang.org/api/oauth2/v2"
 	"gorm.io/gorm"
 )
 
@@ -61,7 +61,16 @@ func GoogleCallback(db *gorm.DB) gin.HandlerFunc {
 
 		// Get user info from Google
 		client := googleOauthConfig.Client(context.Background(), token)
-		userInfo, err := oauth2.New(client).Userinfo.Get().Do()
+		oauth2Service, err := googleoauth2.New(client)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"Title": "Login",
+				"Error": "Failed to create OAuth service",
+			})
+			return
+		}
+
+		userInfo, err := oauth2Service.Userinfo.Get().Do()
 		if err != nil {
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
 				"Title": "Login",
