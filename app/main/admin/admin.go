@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/dariubs/scaffold/app/database"
+	"github.com/dariubs/scaffold/app/handlers/admin"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,16 +27,12 @@ func main() {
 	}
 
 	// Admin routes
-	admin := r.Group("/admin")
-	admin.Use(gin.BasicAuth(gin.Accounts{
+	adminGroup := r.Group("/admin")
+	adminGroup.Use(gin.BasicAuth(gin.Accounts{
 		username: password,
 	}))
 	{
-		admin.GET("/", func(c *gin.Context) {
-			c.HTML(200, "admin.home.html", gin.H{
-				"Title": "Admin Dashboard",
-			})
-		})
+		adminGroup.GET("/", admin.AdminHome())
 	}
 
 	port := os.Getenv("ADMIN_PORT")
