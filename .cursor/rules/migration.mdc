@@ -1,0 +1,8 @@
+---
+description: migration
+globs:
+alwaysApply: true
+---
+
+- When adding a new model in `app/model`, always create its migration in `app/main/migrate`.
+- Only use `app/main/migrate` for migrations (no alternative migration paths).
