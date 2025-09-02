@@ -19,11 +19,11 @@ deps:
 # Build both applications
 build:
 	@echo "Building main application..."
-	go build -o bin/scaffold app/main/index/index.go
+	go build -o bin/index app/main/index/index.go
 	@echo "Building admin panel..."
-	go build -o bin/scaffold-admin app/main/admin/admin.go
+	go build -o bin/admin app/main/admin/admin.go
 	@echo "Building migration tool..."
-	go build -o bin/scaffold-migrate app/main/migrate/migrate.go
+	go build -o bin/migrate app/main/migrate/migrate.go
 	@echo "Build complete! Binaries are in the bin/ directory"
 
 # Run the main application
