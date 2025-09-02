@@ -1,4 +1,4 @@
-.PHONY: help build run-admin run-index clean deps test
+.PHONY: help build run-admin run-index clean deps test migrate
 
 # Default target
 help:
@@ -9,6 +9,7 @@ help:
 	@echo "  run-admin - Run the admin panel"
 	@echo "  clean     - Clean build artifacts"
 	@echo "  test      - Run tests"
+	@echo "  migrate   - Run database migrations"
 
 # Install dependencies
 deps:
@@ -21,6 +22,8 @@ build:
 	go build -o bin/scaffold app/main/index/index.go
 	@echo "Building admin panel..."
 	go build -o bin/scaffold-admin app/main/admin/admin.go
+	@echo "Building migration tool..."
+	go build -o bin/scaffold-migrate app/main/migrate/migrate.go
 	@echo "Build complete! Binaries are in the bin/ directory"
 
 # Run the main application
@@ -41,6 +44,11 @@ clean:
 # Run tests
 test:
 	go test ./...
+
+# Run database migrations
+migrate:
+	@echo "Running database migrations..."
+	go run app/main/migrate/migrate.go
 
 # Create necessary directories
 setup:
