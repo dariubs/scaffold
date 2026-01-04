@@ -16,6 +16,7 @@ type User struct {
 	Bio         string
 	GoogleID    string `gorm:"uniqueIndex"`        // Google OAuth ID
 	LoginMethod string `gorm:"default:'password'"` // 'password' or 'google'
+	IsAdmin     bool   `gorm:"default:false"`      // Admin flag
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

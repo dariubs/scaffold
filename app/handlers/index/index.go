@@ -135,22 +135,21 @@ func Logout() gin.HandlerFunc {
 
 func Profile(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		userID := session.Get("user_id")
-
-		if userID == nil {
+		// Get user from context (set by auth middleware)
+		user, exists := c.Get("user")
+		if !exists {
 			c.Redirect(http.StatusFound, "/login")
 			return
 		}
 
-		var user model.User
-		if err := db.First(&user, userID).Error; err != nil {
+		userModel, ok := user.(model.User)
+		if !ok {
 			c.Redirect(http.StatusFound, "/login")
 			return
 		}
 
 		c.HTML(http.StatusOK, "profile.html", gin.H{
-			"User":  user,
+			"User":  userModel,
 			"Title": "Profile",
 		})
 	}

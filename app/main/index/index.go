@@ -2,10 +2,12 @@ package main
 
 import (
 	"log"
-	"os"
 
+	"github.com/dariubs/scaffold/app/config"
 	"github.com/dariubs/scaffold/app/database"
+	"github.com/dariubs/scaffold/app/handlers/health"
 	"github.com/dariubs/scaffold/app/handlers/index"
+	"github.com/dariubs/scaffold/app/middleware"
 	"github.com/dariubs/scaffold/app/utils"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -13,6 +15,12 @@ import (
 )
 
 func main() {
+	// Load configuration
+	err := config.Load()
+	if err != nil {
+		log.Fatal("Error loading configuration:", err)
+	}
+
 	// Initialize database
 	database.InitDB()
 
@@ -29,11 +37,14 @@ func main() {
 	r.LoadHTMLGlob("views/index/*")
 
 	// Session middleware
-	sessionSecret := os.Getenv("SESSION_SECRET")
-	if sessionSecret == "" {
-		sessionSecret = "devsecret123" // fallback for dev
+	r.Use(sessions.Sessions("scaffoldsession", cookie.NewStore([]byte(config.C.Session.Secret))))
+
+	// Health check routes (before other middleware)
+	healthGroup := r.Group("")
+	{
+		healthGroup.GET("/health", health.Health())
+		healthGroup.GET("/readiness", health.Readiness())
 	}
-	r.Use(sessions.Sessions("scaffoldsession", cookie.NewStore([]byte(sessionSecret))))
 
 	// Routes
 	r.GET("/", index.Home(database.DB))
@@ -42,24 +53,29 @@ func main() {
 	r.GET("/register", index.RegisterForm())
 	r.POST("/register", index.Register(database.DB))
 	r.GET("/logout", index.Logout())
-	r.GET("/profile", index.Profile(database.DB))
+
+	// Protected routes
+	protected := r.Group("")
+	protected.Use(middleware.RequireAuth(database.DB))
+	{
+		protected.GET("/profile", index.Profile(database.DB))
+	}
 
 	// Google OAuth routes
 	r.GET("/auth/google", index.GoogleLogin())
 	r.GET("/auth/google/callback", index.GoogleCallback(database.DB))
 
-	// File upload routes (only if R2 service is available)
+	// File upload routes (only if R2 service is available, protected)
 	if r2Service != nil {
-		r.POST("/upload/profile-image", index.UploadProfileImage(database.DB, r2Service))
-		r.POST("/upload/image", index.UploadImage(database.DB, r2Service))
-		r.POST("/delete/image", index.DeleteImage(database.DB, r2Service))
+		uploadGroup := r.Group("")
+		uploadGroup.Use(middleware.RequireAuth(database.DB))
+		{
+			uploadGroup.POST("/upload/profile-image", index.UploadProfileImage(database.DB, r2Service))
+			uploadGroup.POST("/upload/image", index.UploadImage(database.DB, r2Service))
+			uploadGroup.POST("/delete/image", index.DeleteImage(database.DB, r2Service))
+		}
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3782"
-	}
-
-	log.Printf("Starting server on port %s", port)
-	r.Run(":" + port)
+	log.Printf("Starting server on port %s", config.C.Server.Port)
+	r.Run(":" + config.C.Server.Port)
 }

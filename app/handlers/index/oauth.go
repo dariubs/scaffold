@@ -3,26 +3,23 @@ package index
 import (
 	"context"
 	"net/http"
-	"os"
 
+	"github.com/dariubs/scaffold/app/config"
 	"github.com/dariubs/scaffold/app/model"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	googleoauth2 "google.golang.org/api/oauth2/v2"
 	"gorm.io/gorm"
 )
 
-var (
-	googleOauthConfig *oauth2.Config
-)
-
-func init() {
-	googleOauthConfig = &oauth2.Config{
-		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
+func getGoogleOAuthConfig() *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     config.C.GoogleOAuth.ClientID,
+		ClientSecret: config.C.GoogleOAuth.ClientSecret,
+		RedirectURL:  config.C.GoogleOAuth.RedirectURL,
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
@@ -33,14 +30,46 @@ func init() {
 
 func GoogleLogin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		url := googleOauthConfig.AuthCodeURL("state")
+		googleOauthConfig := getGoogleOAuthConfig()
+		if googleOauthConfig.ClientID == "" {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"Title": "Login",
+				"Error": "Google OAuth is not configured",
+			})
+			return
+		}
+
+		// Generate state token for CSRF protection
+		state := uuid.New().String()
+		session := sessions.Default(c)
+		session.Set("oauth_state", state)
+		if err := session.Save(); err != nil {
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"Title": "Login",
+				"Error": "Failed to save session",
+			})
+			return
+		}
+
+		url := googleOauthConfig.AuthCodeURL(state)
 		c.Redirect(http.StatusTemporaryRedirect, url)
 	}
 }
 
 func GoogleCallback(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		googleOauthConfig := getGoogleOAuthConfig()
+		if googleOauthConfig.ClientID == "" {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"Title": "Login",
+				"Error": "Google OAuth is not configured",
+			})
+			return
+		}
+
 		code := c.Query("code")
+		state := c.Query("state")
+
 		if code == "" {
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
 				"Title": "Login",
@@ -48,6 +77,21 @@ func GoogleCallback(db *gorm.DB) gin.HandlerFunc {
 			})
 			return
 		}
+
+		// Validate state token (CSRF protection)
+		session := sessions.Default(c)
+		savedState := session.Get("oauth_state")
+		if savedState == nil || savedState.(string) != state {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"Title": "Login",
+				"Error": "Invalid state token",
+			})
+			return
+		}
+
+		// Clear state from session
+		session.Delete("oauth_state")
+		session.Save()
 
 		// Exchange code for token
 		token, err := googleOauthConfig.Exchange(context.Background(), code)

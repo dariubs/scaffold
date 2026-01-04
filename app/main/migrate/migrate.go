@@ -3,16 +3,17 @@ package main
 import (
 	"log"
 
+	"github.com/dariubs/scaffold/app/config"
 	"github.com/dariubs/scaffold/app/database"
 	"github.com/dariubs/scaffold/app/model"
-	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
-	// Load environment variables from .env file
-	err := godotenv.Load()
+	// Load configuration first
+	err := config.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error loading configuration:", err)
 	}
 
 	// Initialize database connection
@@ -51,18 +52,24 @@ func runMigrations() error {
 	// Migration 3: Seed initial data if needed
 	log.Println("Running migration: Seed initial data")
 
-	// Example: Create admin user if it doesn't exist
+	// Create admin user if it doesn't exist
 	var adminUser model.User
 	result := db.Where("email = ?", "admin@example.com").First(&adminUser)
 	if result.Error != nil {
 		if result.Error.Error() == "record not found" {
 			log.Println("Creating admin user...")
+			// Hash password
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
+			if err != nil {
+				return err
+			}
 			adminUser = model.User{
 				Username:    "admin",
 				Email:       "admin@example.com",
-				Password:    "admin123", // In production, use hashed password
+				Password:    string(hashedPassword),
 				Name:        "Administrator",
 				LoginMethod: "password",
+				IsAdmin:     true,
 			}
 			err = db.Create(&adminUser).Error
 			if err != nil {
@@ -74,6 +81,12 @@ func runMigrations() error {
 		}
 	} else {
 		log.Println("Admin user already exists")
+		// Update existing admin user to ensure IsAdmin is set
+		if !adminUser.IsAdmin {
+			adminUser.IsAdmin = true
+			db.Save(&adminUser)
+			log.Println("Updated existing admin user to set IsAdmin flag")
+		}
 	}
 
 	return nil

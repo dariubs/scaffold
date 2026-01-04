@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"mime/multipart"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/dariubs/scaffold/app/config"
 	"github.com/google/uuid"
 )
 
@@ -22,16 +22,17 @@ type R2Service struct {
 }
 
 func NewR2Service() (*R2Service, error) {
-	// Load R2 configuration from environment
-	accountID := os.Getenv("CLOUDFLARE_ACCOUNT_ID")
-	accessKeyID := os.Getenv("CLOUDFLARE_ACCESS_KEY_ID")
-	secretAccessKey := os.Getenv("CLOUDFLARE_SECRET_ACCESS_KEY")
-	bucket := os.Getenv("CLOUDFLARE_R2_BUCKET")
-	region := os.Getenv("CLOUDFLARE_R2_REGION")
-
-	if region == "" {
-		region = "auto"
+	// Check if R2 configuration is available
+	if config.C.CloudflareR2.AccountID == "" || config.C.CloudflareR2.AccessKeyID == "" ||
+		config.C.CloudflareR2.SecretAccessKey == "" || config.C.CloudflareR2.Bucket == "" {
+		return nil, fmt.Errorf("R2 configuration is incomplete")
 	}
+
+	accountID := config.C.CloudflareR2.AccountID
+	accessKeyID := config.C.CloudflareR2.AccessKeyID
+	secretAccessKey := config.C.CloudflareR2.SecretAccessKey
+	bucket := config.C.CloudflareR2.Bucket
+	region := config.C.CloudflareR2.Region
 
 	// Create custom endpoint for Cloudflare R2
 	endpoint := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountID)
@@ -45,14 +46,14 @@ func NewR2Service() (*R2Service, error) {
 		}, nil
 	})
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithEndpointResolverWithOptions(customResolver),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+	cfg, err := awsconfig.LoadDefaultConfig(context.TODO(),
+		awsconfig.WithEndpointResolverWithOptions(customResolver),
+		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			accessKeyID,
 			secretAccessKey,
 			"",
 		)),
-		config.WithRegion(region),
+		awsconfig.WithRegion(region),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config: %v", err)

@@ -1,11 +1,10 @@
 package database
 
 import (
+	"database/sql"
 	"log"
-	"os"
 
-	"github.com/dariubs/scaffold/app/model"
-	"github.com/joho/godotenv"
+	"github.com/dariubs/scaffold/app/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -13,29 +12,43 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	// Load environment variables from .env file
-	err := godotenv.Load()
+	// Load configuration
+	err := config.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error loading configuration:", err)
 	}
 
-	dsn := os.Getenv("DB_DSN")
-	if dsn == "" {
-		log.Fatal("DB_DSN not set in .env")
-	}
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(config.C.Database.DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatal("failed to connect to database:", err)
 	}
 
-	DB = db
-
-	// Auto migrate the schema - only User model
-	err = db.AutoMigrate(&model.User{})
+	// Configure connection pool
+	sqlDB, err := db.DB()
 	if err != nil {
-		log.Fatal("failed to migrate database:", err)
+		log.Fatal("failed to get database instance:", err)
 	}
 
-	log.Println("Database connected and migrated successfully")
+	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+	sqlDB.SetMaxIdleConns(10)
+
+	// SetMaxOpenConns sets the maximum number of open connections to the database.
+	sqlDB.SetMaxOpenConns(100)
+
+	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+	// sqlDB.SetConnMaxLifetime(time.Hour)
+
+	DB = db
+
+	log.Println("Database connected successfully")
+}
+
+// GetDB returns the database instance (for dependency injection pattern)
+func GetDB() *gorm.DB {
+	return DB
+}
+
+// GetSQLDB returns the underlying sql.DB instance for connection pool management
+func GetSQLDB() (*sql.DB, error) {
+	return DB.DB()
 }
