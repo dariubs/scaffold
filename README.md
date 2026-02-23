@@ -38,11 +38,12 @@ cd scaffold
 # Install dependencies
 go mod tidy
 
-# Copy environment file
-cp .env.example .env
+# Create .env interactively (orange terminal wizard, step-by-step)
+make setup
 
-# Edit .env with your database and API keys
-# Required: DB_DSN and SESSION_SECRET
+# Or copy and edit manually:
+# cp .env.example .env
+# Edit .env with your database and API keys (required: DB_DSN and SESSION_SECRET)
 ```
 
 ### 3. Environment Variables

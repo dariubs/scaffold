@@ -1,8 +1,10 @@
-.PHONY: help build run clean deps test migrate
+.PHONY: help build run clean deps test migrate setup apply-module
 
 # Default target
 help:
 	@echo "Available commands:"
+	@echo "  setup         - Interactive .env setup (step-by-step)"
+	@echo "  apply-module  - Apply GO_MODULE_PATH from .env to go.mod and all Go files"
 	@echo "  deps      - Install dependencies"
 	@echo "  build     - Build application and migration tool"
 	@echo "  run       - Run the application"
@@ -42,14 +44,21 @@ migrate:
 	@echo "Running database migrations..."
 	go run app/main/migrate/migrate.go
 
-# Create necessary directories
+# Interactive .env setup (step-by-step, orange/terminal styled)
 setup:
-	mkdir -p bin
-	mkdir -p log
-	@echo "Setup complete! Created bin/ and log/ directories"
+	@bash scripts/setup-env.sh
+
+# Apply Go module path from .env to go.mod and all .go files
+apply-module:
+	@bash scripts/apply-module-path.sh
+
+# Create directories only (used when .env already exists)
+setup-dirs:
+	@mkdir -p bin log
+	@echo "Created bin/ and log/ directories."
 
 # Development mode - run single server
-dev: setup
+dev: setup-dirs
 	@echo "Starting development server..."
 	@echo "App: http://localhost:3782"
 	@echo "Admin: http://localhost:3782/admin (or set ADMIN_BASE_PATH in .env)"
