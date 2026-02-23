@@ -6,7 +6,8 @@ A production-ready Go web application template with user authentication, Google 
 ## Features
 
 - User registration and login
-- Google OAuth integration with CSRF protection
+- Multiple login methods: password, Google, GitHub, LinkedIn, X (Twitter) — each can be enabled/disabled via .env
+- OAuth integration with CSRF protection
 - Session-based authentication
 - Admin panel with database-backed admin authentication
 - Profile management with image uploads
@@ -52,10 +53,18 @@ See `.env.example` for all available configuration options.
 - `DB_DSN` - PostgreSQL connection string
 - `SESSION_SECRET` - Secret key for session encryption (use a strong random string in production)
 
-**Optional:**
-- `GOOGLE_CLIENT_ID` - Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
-- `GOOGLE_REDIRECT_URL` - Google OAuth redirect URL
+**Optional (login methods):** Set to `true`, `1`, or `yes` to enable; omit or set to `false` to disable. Configure credentials for each provider you use.
+- `LOGIN_PASSWORD_ENABLED` - Username/password login (default: true)
+- `LOGIN_GOOGLE_ENABLED` - Google OAuth (default: true)
+- `LOGIN_GITHUB_ENABLED` - GitHub OAuth (default: false)
+- `LOGIN_LINKEDIN_ENABLED` - LinkedIn OAuth (default: false)
+- `LOGIN_X_ENABLED` - X (Twitter) OAuth (default: false)
+
+**Optional (OAuth credentials):** Create an app on each platform and set the callback URL to e.g. `http://localhost:3782/auth/github/callback` (or `/auth/linkedin/callback`, `/auth/x/callback`).
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL`
+- `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URL`
+- `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REDIRECT_URL`
+- `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_REDIRECT_URL`
 - `CLOUDFLARE_ACCOUNT_ID` - Cloudflare R2 account ID
 - `CLOUDFLARE_ACCESS_KEY_ID` - Cloudflare R2 access key
 - `CLOUDFLARE_SECRET_ACCESS_KEY` - Cloudflare R2 secret key

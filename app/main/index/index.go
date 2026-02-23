@@ -80,9 +80,23 @@ func main() {
 		protected.GET("/profile", index.Profile(database.DB))
 	}
 
-	// Google OAuth routes
-	r.GET("/auth/google", index.GoogleLogin())
-	r.GET("/auth/google/callback", index.GoogleCallback(database.DB))
+	// OAuth routes (only for enabled providers)
+	if config.C.OAuthGoogleEnabled() {
+		r.GET("/auth/google", index.GoogleLogin())
+		r.GET("/auth/google/callback", index.GoogleCallback(database.DB))
+	}
+	if config.C.OAuthGitHubEnabled() {
+		r.GET("/auth/github", index.GitHubLogin())
+		r.GET("/auth/github/callback", index.GitHubCallback(database.DB))
+	}
+	if config.C.OAuthLinkedInEnabled() {
+		r.GET("/auth/linkedin", index.LinkedInLogin())
+		r.GET("/auth/linkedin/callback", index.LinkedInCallback(database.DB))
+	}
+	if config.C.OAuthXEnabled() {
+		r.GET("/auth/x", index.XLogin())
+		r.GET("/auth/x/callback", index.XCallback(database.DB))
+	}
 
 	// File upload routes (only if R2 service is available, protected)
 	if r2Service != nil {
