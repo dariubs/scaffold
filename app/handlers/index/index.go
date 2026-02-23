@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/dariubs/scaffold/app/model"
+	"github.com/dariubs/scaffold/app/utils"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -73,7 +74,7 @@ func RegisterForm() gin.HandlerFunc {
 	}
 }
 
-func Register(db *gorm.DB) gin.HandlerFunc {
+func Register(db *gorm.DB, emailService *utils.EmailService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.PostForm("username")
 		email := c.PostForm("email")
@@ -113,6 +114,13 @@ func Register(db *gorm.DB) gin.HandlerFunc {
 				"Error": "Error creating account",
 			})
 			return
+		}
+
+		// Send welcome email if Resend is configured (non-blocking)
+		if emailService != nil {
+			go func() {
+				_ = emailService.SendWelcome(user.Email, user.Name)
+			}()
 		}
 
 		// Auto-login after registration

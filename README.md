@@ -11,6 +11,7 @@ A production-ready Go web application template with user authentication, Google 
 - Admin panel with database-backed admin authentication
 - Profile management with image uploads
 - Cloudflare R2 file storage
+- Email via Resend (welcome email on registration when configured)
 - PostgreSQL database with GORM
 - Structured logging (stdlib slog)
 - Health and readiness check endpoints
@@ -59,6 +60,8 @@ See `.env.example` for all available configuration options.
 - `CLOUDFLARE_ACCESS_KEY_ID` - Cloudflare R2 access key
 - `CLOUDFLARE_SECRET_ACCESS_KEY` - Cloudflare R2 secret key
 - `CLOUDFLARE_R2_BUCKET` - Cloudflare R2 bucket name
+- `RESEND_API_KEY` - Resend API key (optional; when set with `RESEND_FROM`, welcome emails are sent on registration)
+- `RESEND_FROM` - Sender address for transactional email (e.g. `Scaffold <onboarding@resend.dev>`)
 - `PORT` - Server port (default: 3782)
 - `ADMIN_BASE_PATH` - Admin panel URL path (default: admin, e.g. /admin)
 - `LOG_LEVEL` - Log level (debug, info, warn, error) (default: info)

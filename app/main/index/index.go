@@ -39,6 +39,9 @@ func main() {
 		r2Service = nil
 	}
 
+	// Initialize email service (Resend; optional)
+	emailService, _ := utils.NewEmailService()
+
 	r := gin.Default()
 
 	// Load HTML templates from both index and admin directories
@@ -67,7 +70,7 @@ func main() {
 	r.GET("/login", index.LoginForm())
 	r.POST("/login", index.Login(database.DB))
 	r.GET("/register", index.RegisterForm())
-	r.POST("/register", index.Register(database.DB))
+	r.POST("/register", index.Register(database.DB, emailService))
 	r.GET("/logout", index.Logout())
 
 	// Protected routes

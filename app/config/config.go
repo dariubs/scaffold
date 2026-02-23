@@ -30,6 +30,10 @@ type Config struct {
 		Bucket          string
 		Region          string
 	}
+	Resend struct {
+		APIKey string
+		From   string
+	}
 }
 
 var C *Config
@@ -77,6 +81,10 @@ func Load() error {
 	if C.CloudflareR2.Region == "" {
 		C.CloudflareR2.Region = "auto"
 	}
+
+	// Resend email configuration (optional)
+	C.Resend.APIKey = os.Getenv("RESEND_API_KEY")
+	C.Resend.From = os.Getenv("RESEND_FROM")
 
 	return nil
 }
