@@ -12,7 +12,7 @@ A production-ready Go web application template with user authentication, Google 
 - Profile management with image uploads
 - Cloudflare R2 file storage
 - PostgreSQL database with GORM
-- Structured logging (logrus)
+- Structured logging (stdlib slog)
 - Health and readiness check endpoints
 - Graceful shutdown
 - Connection pooling
@@ -37,7 +37,7 @@ cd scaffold
 go mod tidy
 
 # Copy environment file
-cp env.example .env
+cp .env.example .env
 
 # Edit .env with your database and API keys
 # Required: DB_DSN and SESSION_SECRET
@@ -45,7 +45,7 @@ cp env.example .env
 
 ### 3. Environment Variables
 
-See `env.example` for all available configuration options.
+See `.env.example` for all available configuration options.
 
 **Required:**
 - `DB_DSN` - PostgreSQL connection string
@@ -59,8 +59,8 @@ See `env.example` for all available configuration options.
 - `CLOUDFLARE_ACCESS_KEY_ID` - Cloudflare R2 access key
 - `CLOUDFLARE_SECRET_ACCESS_KEY` - Cloudflare R2 secret key
 - `CLOUDFLARE_R2_BUCKET` - Cloudflare R2 bucket name
-- `PORT` - Main server port (default: 3782)
-- `ADMIN_PORT` - Admin server port (default: 3781)
+- `PORT` - Server port (default: 3782)
+- `ADMIN_BASE_PATH` - Admin panel URL path (default: admin, e.g. /admin)
 - `LOG_LEVEL` - Log level (debug, info, warn, error) (default: info)
 
 ### 4. Database Setup
@@ -78,35 +78,28 @@ This will:
 
 ### 5. Run
 ```bash
-# Start main app
 go run app/main/index/index.go
-
-# In another terminal, start admin panel
-go run app/main/admin/admin.go
 ```
 
 Or use the Makefile:
 ```bash
-# Run both servers
 make dev
-
-# Or run individually
-make run-index  # Main app
-make run-admin  # Admin panel
+# or
+make run
 ```
 
 ### 6. Access
-- Main app: http://localhost:3782
-- Admin panel: http://localhost:3781/admin
+- App: http://localhost:3782
+- Admin panel: http://localhost:3782/admin (path configurable via `ADMIN_BASE_PATH`)
 - Health check: http://localhost:3782/health
 - Readiness check: http://localhost:3782/readiness
 
 **Admin Login:**
-1. Log in through the main app (http://localhost:3782/login)
+1. Log in through the app (http://localhost:3782/login)
 2. Use the default admin credentials:
    - Email: `admin@example.com`
    - Password: `admin123`
-3. Navigate to the admin panel (http://localhost:3781/admin)
+3. Navigate to the admin panel (http://localhost:3782/admin)
 
 The admin panel uses session-based authentication and checks the `IsAdmin` flag in the database.
 
@@ -120,8 +113,7 @@ app/
 │   ├── health/   # Health check handlers
 │   └── index/    # Main app handlers
 ├── main/         # Application entry points
-│   ├── admin/    # Admin server
-│   ├── index/    # Main server
+│   ├── index/    # Main server (serves app and admin)
 │   └── migrate/  # Migration tool
 ├── middleware/   # HTTP middleware (auth, logging, etc.)
 ├── model/        # Data models
@@ -133,16 +125,10 @@ views/            # HTML templates
 
 ### Build
 ```bash
-# Build all binaries
 make build
 
-# Build main app
+# Or manually:
 go build -o bin/index app/main/index/index.go
-
-# Build admin panel
-go build -o bin/admin app/main/admin/admin.go
-
-# Build migration tool
 go build -o bin/migrate app/main/migrate/migrate.go
 ```
 
@@ -157,10 +143,9 @@ go run app/main/migrate/migrate.go
 ```bash
 make help      # Show all available commands
 make deps      # Install dependencies
-make build     # Build all applications
-make run-index # Run main application
-make run-admin # Run admin panel
-make dev       # Run both servers in development mode
+make build     # Build application and migration tool
+make run       # Run application
+make dev       # Run in development mode
 make clean     # Clean build artifacts
 make migrate   # Run database migrations
 ```

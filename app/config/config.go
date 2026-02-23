@@ -16,7 +16,7 @@ type Config struct {
 	}
 	Server struct {
 		Port      string
-		AdminPort string
+		AdminPath string
 	}
 	GoogleOAuth struct {
 		ClientID     string
@@ -58,9 +58,9 @@ func Load() error {
 		C.Server.Port = "3782"
 	}
 
-	C.Server.AdminPort = os.Getenv("ADMIN_PORT")
-	if C.Server.AdminPort == "" {
-		C.Server.AdminPort = "3781"
+	C.Server.AdminPath = os.Getenv("ADMIN_BASE_PATH")
+	if C.Server.AdminPath == "" {
+		C.Server.AdminPath = "admin"
 	}
 
 	// Google OAuth configuration (optional)

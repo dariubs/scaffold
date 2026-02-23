@@ -1,30 +1,29 @@
 package utils
 
 import (
+	"log/slog"
 	"os"
-
-	"github.com/sirupsen/logrus"
+	"strings"
 )
 
-var Logger *logrus.Logger
+var Logger *slog.Logger
 
 func init() {
-	Logger = logrus.New()
-	Logger.SetFormatter(&logrus.JSONFormatter{
-		TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
-	})
-	Logger.SetOutput(os.Stdout)
-
-	// Set log level from environment (default: info)
-	level := os.Getenv("LOG_LEVEL")
-	if level == "" {
-		level = "info"
+	level := slog.LevelInfo
+	if s := os.Getenv("LOG_LEVEL"); s != "" {
+		switch strings.ToLower(s) {
+		case "debug":
+			level = slog.LevelDebug
+		case "info":
+			level = slog.LevelInfo
+		case "warn", "warning":
+			level = slog.LevelWarn
+		case "error":
+			level = slog.LevelError
+		}
 	}
 
-	logLevel, err := logrus.ParseLevel(level)
-	if err != nil {
-		logLevel = logrus.InfoLevel
-	}
-	Logger.SetLevel(logLevel)
+	Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	}))
 }
-

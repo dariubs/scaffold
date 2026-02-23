@@ -43,6 +43,7 @@ func ValidatePasswordStrength(password string) bool {
 		}
 	}
 
+	_ = hasSpecial // reserved for optional future requirement
 	return hasUpper && hasLower && hasNumber
 }
 

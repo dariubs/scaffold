@@ -158,7 +158,7 @@ func GoogleCallback(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// Set session
-		session := sessions.Default(c)
+		session = sessions.Default(c)
 		session.Set("user_id", user.Model.ID)
 		session.Save()
 

@@ -17,27 +17,22 @@ func RequestLogger() gin.HandlerFunc {
 		// Process request
 		c.Next()
 
-		// Calculate latency
 		latency := time.Since(start)
+		attrs := []any{
+			"status", c.Writer.Status(),
+			"method", c.Request.Method,
+			"path", path,
+			"query", raw,
+			"ip", c.ClientIP(),
+			"user_agent", c.Request.UserAgent(),
+			"latency", latency.String(),
+			"latency_ms", latency.Milliseconds(),
+		}
 
-		// Build log entry
-		entry := utils.Logger.WithFields(logrus.Fields{
-			"status":     c.Writer.Status(),
-			"method":     c.Request.Method,
-			"path":       path,
-			"query":      raw,
-			"ip":         c.ClientIP(),
-			"user_agent": c.Request.UserAgent(),
-			"latency":    latency.String(),
-			"latency_ms": latency.Milliseconds(),
-		})
-
-		// Log error if status is 500 or above
 		if c.Writer.Status() >= 500 {
-			entry.Error("HTTP Request Error")
+			utils.Logger.Error("HTTP Request Error", attrs...)
 		} else {
-			entry.Info("HTTP Request")
+			utils.Logger.Info("HTTP Request", attrs...)
 		}
 	}
 }
-
